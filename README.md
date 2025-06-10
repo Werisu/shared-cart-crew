@@ -1,73 +1,102 @@
-# Welcome to your Lovable project
+# Lista de Compras Compartilhada 🛒🔒
 
-## Project info
+Um sistema moderno e seguro para gerenciar listas de compras compartilhadas em tempo real, agora com autenticação de usuários!
 
-**URL**: https://lovable.dev/projects/010f6385-ad26-430f-9a60-8c3819fd5689
+## 🚀 Novas Funcionalidades de Autenticação
 
-## How can I edit this code?
+### 🔐 Sistema de Autenticação Segura
 
-There are several ways of editing your application.
+- Páginas de **login e cadastro** com validação de formulários
+- **Hook useAuth** para gerenciamento centralizado do estado de autenticação
+- **Proteção de rotas** - acesso restrito a usuários autenticados
+- **Menu do usuário** com opção de logout no header
 
-**Use Lovable**
+### 💾 Integração com Banco de Dados
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/010f6385-ad26-430f-9a60-8c3819fd5689) and start prompting.
+- Conexão com **Supabase** para armazenamento seguro
+- Sincronização automática das listas com o banco de dados
+- Dados persistentes entre sessões
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🛠 Como Testar
 
-**Use your preferred IDE**
+1. Acesse `/auth` para registrar ou fazer login
+2. Após autenticação, você será redirecionado automaticamente
+3. Todas as alterações agora são salvas no banco de dados
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+> **Dica para desenvolvimento:** Desative a confirmação de email nas configurações do Supabase para agilizar os testes
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 📌 Próximas Atualizações (Roadmap Atualizado)
 
-Follow these steps:
+- [x] **Sistema completo de autenticação**
+- [ ] Funcionalidade de compartilhamento (convidar colaboradores)
+- [ ] Notificações em tempo real
+- [ ] Edição de perfil do usuário
+- [ ] Recuperação de senha
+- [ ] Login com redes sociais
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🛠 Tecnologias Utilizadas (Atualizado)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- **React.js** (Frontend)
+- **Supabase** (Autenticação + Banco de dados)
+- **React Hook Form + Yup** (Validação de formulários)
+- **React Router** (Proteção de rotas)
+- **Tailwind CSS** (Estilização)
+- **Lucide React** (Ícones)
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🚨 Proteção de Rotas
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+Rotas protegidas implementadas:
+
+```javascript
+<Route
+  path="/app"
+  element={
+    <ProtectedRoute>
+      <AppLayout />
+    </ProtectedRoute>
+  }
+>
+  {/* Rotas da aplicação */}
+</Route>
 ```
 
-**Edit a file directly in GitHub**
+## 📦 Estrutura do Projeto (Atualizada)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+/src
+  /auth
+    Login.jsx
+    Register.jsx
+  /components
+    ProtectedRoute.jsx
+  /context
+    AuthContext.jsx
+  /hooks
+    useAuth.js
+```
 
-**Use GitHub Codespaces**
+## 🔄 Fluxo de Autenticação
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. Usuário acessa `/auth`
+2. Faz login ou se registra
+3. Supabase valida credenciais
+4. useAuth atualiza o estado global
+5. Usuário é redirecionado para `/app`
+6. Dados são carregados do Supabase
 
-## What technologies are used for this project?
+## 🤝 Como Contribuir
 
-This project is built with:
+1. Configure o arquivo `.env` com suas credenciais do Supabase
+2. Instale as dependências com `npm install`
+3. Rode `npm run dev` para iniciar
+4. Faça suas alterações e abra um PR!
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+# Variáveis de ambiente necessárias
+VITE_SUPABASE_URL=your-url
+VITE_SUPABASE_KEY=your-key
+```
 
-## How can I deploy this project?
+## 📄 Licença
 
-Simply open [Lovable](https://lovable.dev/projects/010f6385-ad26-430f-9a60-8c3819fd5689) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+MIT License - Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
