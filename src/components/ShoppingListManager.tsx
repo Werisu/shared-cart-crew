@@ -17,6 +17,9 @@ export interface ShoppingItem {
   quantity: number;
   completed_by?: string | null;
   completed_at?: string | null;
+  list_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ShoppingList {
@@ -27,6 +30,7 @@ export interface ShoppingList {
   created_at: string;
   color: string;
   created_by: string;
+  updated_at: string;
 }
 
 export const ShoppingListManager = () => {
@@ -50,7 +54,7 @@ export const ShoppingListManager = () => {
 
       // Buscar itens para cada lista
       const listsWithItems = await Promise.all(
-        listsData.map(async (list) => {
+        (listsData || []).map(async (list) => {
           const { data: items, error: itemsError } = await supabase
             .from('shopping_items')
             .select('*')

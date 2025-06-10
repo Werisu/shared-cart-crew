@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ShoppingList, ShoppingItem } from './ShoppingListManager';
 import { ArrowLeft, Plus, ListCheck } from 'lucide-react';
 import { ItemCard } from './ItemCard';
 import { AddItemModal } from './AddItemModal';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface ListDetailProps {
   list: ShoppingList;
@@ -19,39 +21,104 @@ export const ListDetail: React.FC<ListDetailProps> = ({
   onUpdate
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const addItem = (name: string, category: string, quantity: number) => {
-    const newItem: ShoppingItem = {
-      id: Date.now().toString(),
-      name,
-      category,
-      quantity,
-      completed: false
-    };
-    
-    const updatedList = {
-      ...list,
-      items: [...list.items, newItem]
-    };
-    onUpdate(updatedList);
+  const addItem = async (name: string, category: string, quantity: number) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('shopping_items')
+        .insert({
+          list_id: list.id,
+          name,
+          category,
+          quantity
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedList = {
+        ...list,
+        items: [...list.items, data]
+      };
+      onUpdate(updatedList);
+
+      toast({
+        title: "Item adicionado",
+        description: `${name} foi adicionado à lista`
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar item:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o item",
+        variant: "destructive"
+      });
+    }
   };
 
-  const updateItem = (itemId: string, updates: Partial<ShoppingItem>) => {
-    const updatedList = {
-      ...list,
-      items: list.items.map(item => 
-        item.id === itemId ? { ...item, ...updates } : item
-      )
-    };
-    onUpdate(updatedList);
+  const updateItem = async (itemId: string, updates: Partial<ShoppingItem>) => {
+    try {
+      const { error } = await supabase
+        .from('shopping_items')
+        .update({
+          ...updates,
+          completed_by: updates.completed ? user?.id : null,
+          completed_at: updates.completed ? new Date().toISOString() : null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      const updatedList = {
+        ...list,
+        items: list.items.map(item => 
+          item.id === itemId ? { ...item, ...updates } : item
+        )
+      };
+      onUpdate(updatedList);
+    } catch (error) {
+      console.error('Erro ao atualizar item:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o item",
+        variant: "destructive"
+      });
+    }
   };
 
-  const deleteItem = (itemId: string) => {
-    const updatedList = {
-      ...list,
-      items: list.items.filter(item => item.id !== itemId)
-    };
-    onUpdate(updatedList);
+  const deleteItem = async (itemId: string) => {
+    try {
+      const { error } = await supabase
+        .from('shopping_items')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      const updatedList = {
+        ...list,
+        items: list.items.filter(item => item.id !== itemId)
+      };
+      onUpdate(updatedList);
+
+      toast({
+        title: "Item removido",
+        description: "O item foi removido da lista"
+      });
+    } catch (error) {
+      console.error('Erro ao deletar item:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o item",
+        variant: "destructive"
+      });
+    }
   };
 
   const completedItems = list.items.filter(item => item.completed);
