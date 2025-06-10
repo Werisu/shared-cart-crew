@@ -9,7 +9,145 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      list_collaborators: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          list_id: string
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          list_id: string
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          list_id?: string
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_collaborators_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shopping_items: {
+        Row: {
+          category: string
+          completed: boolean | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          list_id: string
+          name: string
+          quantity: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          completed?: boolean | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          list_id: string
+          name: string
+          quantity?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          completed?: boolean | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          list_id?: string
+          name?: string
+          quantity?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_lists: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
