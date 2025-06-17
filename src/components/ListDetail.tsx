@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ShoppingList, ShoppingItem } from './ShoppingListManager';
-import { ArrowLeft, Plus, ListCheck } from 'lucide-react';
+import { ArrowLeft, Plus, ListCheck, UserPlus } from 'lucide-react';
 import { ItemCard } from './ItemCard';
 import { AddItemModal } from './AddItemModal';
+import { InviteCollaboratorModal } from './InviteCollaboratorModal';
+import { PendingInvitations } from './PendingInvitations';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -21,8 +23,11 @@ export const ListDetail: React.FC<ListDetailProps> = ({
   onUpdate
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const isOwner = list.created_by === user?.id;
 
   const addItem = async (name: string, category: string, quantity: number) => {
     if (!user) return;
@@ -135,14 +140,34 @@ export const ListDetail: React.FC<ListDetailProps> = ({
           <h1 className="text-3xl font-bold text-gray-900">{list.name}</h1>
           <p className="text-gray-600">{list.description}</p>
         </div>
-        <Button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar Item
-        </Button>
+        <div className="flex gap-2">
+          {isOwner && (
+            <Button 
+              variant="outline"
+              onClick={() => setIsInviteModalOpen(true)}
+              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Convidar
+            </Button>
+          )}
+          <Button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Item
+          </Button>
+        </div>
       </div>
+
+      {/* Convites pendentes (só para proprietários) */}
+      {isOwner && (
+        <PendingInvitations 
+          listId={list.id} 
+          onInvitationUpdate={() => {/* refresh if needed */}} 
+        />
+      )}
 
       {/* Progress */}
       <div className="bg-white rounded-lg p-6 shadow-sm border">
@@ -213,6 +238,13 @@ export const ListDetail: React.FC<ListDetailProps> = ({
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={addItem}
+      />
+
+      <InviteCollaboratorModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        listId={list.id}
+        listName={list.name}
       />
     </div>
   );

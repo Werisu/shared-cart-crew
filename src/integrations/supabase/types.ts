@@ -44,6 +44,53 @@ export type Database = {
           },
         ]
       }
+      list_invitations: {
+        Row: {
+          created_at: string
+          id: string
+          invited_at: string
+          invitee_email: string
+          invitee_id: string | null
+          inviter_id: string
+          list_id: string
+          responded_at: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_at?: string
+          invitee_email: string
+          invitee_id?: string | null
+          inviter_id: string
+          list_id: string
+          responded_at?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_at?: string
+          invitee_email?: string
+          invitee_id?: string | null
+          inviter_id?: string
+          list_id?: string
+          responded_at?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_invitations_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -153,6 +200,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: {
+        Args: { invitation_id: string }
+        Returns: boolean
+      }
+      decline_invitation: {
+        Args: { invitation_id: string }
+        Returns: boolean
+      }
       is_list_collaborator: {
         Args: { list_id: string; user_id: string }
         Returns: boolean

@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingListCard } from './ShoppingListCard';
 import { CreateListModal } from './CreateListModal';
 import { ListDetail } from './ListDetail';
+import { InviteCollaboratorModal } from './InviteCollaboratorModal';
+import { InvitationNotifications } from './InvitationNotifications';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,6 +39,8 @@ export const ShoppingListManager = () => {
   const [lists, setLists] = useState<ShoppingList[]>([]);
   const [selectedList, setSelectedList] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [selectedListForInvite, setSelectedListForInvite] = useState<ShoppingList | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -156,6 +160,16 @@ export const ShoppingListManager = () => {
     setLists(lists.map(list => list.id === updatedList.id ? updatedList : list));
   };
 
+  const handleInviteClick = (list: ShoppingList) => {
+    setSelectedListForInvite(list);
+    setIsInviteModalOpen(true);
+  };
+
+  const handleInviteModalClose = () => {
+    setIsInviteModalOpen(false);
+    setSelectedListForInvite(null);
+  };
+
   const selectedListData = lists.find(list => list.id === selectedList);
 
   if (loading) {
@@ -181,6 +195,8 @@ export const ShoppingListManager = () => {
 
   return (
     <div className="space-y-6">
+      <InvitationNotifications />
+      
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">Suas Listas</h2>
@@ -212,14 +228,19 @@ export const ShoppingListManager = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lists.map((list) => (
-            <ShoppingListCard
-              key={list.id}
-              list={list}
-              onSelect={() => setSelectedList(list.id)}
-              onDelete={() => deleteList(list.id)}
-            />
-          ))}
+          {lists.map((list) => {
+            const isOwner = list.created_by === user?.id;
+            return (
+              <ShoppingListCard
+                key={list.id}
+                list={list}
+                onSelect={() => setSelectedList(list.id)}
+                onDelete={() => deleteList(list.id)}
+                onInvite={() => handleInviteClick(list)}
+                isOwner={isOwner}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -228,6 +249,15 @@ export const ShoppingListManager = () => {
         onClose={() => setIsCreateModalOpen(false)}
         onCreate={createList}
       />
+
+      {selectedListForInvite && (
+        <InviteCollaboratorModal
+          isOpen={isInviteModalOpen}
+          onClose={handleInviteModalClose}
+          listId={selectedListForInvite.id}
+          listName={selectedListForInvite.name}
+        />
+      )}
     </div>
   );
 };

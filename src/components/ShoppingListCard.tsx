@@ -3,19 +3,23 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShoppingList } from './ShoppingListManager';
-import { ListCheck, Share, Trash2 } from 'lucide-react';
+import { ListCheck, Share, Trash2, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ShoppingListCardProps {
   list: ShoppingList;
   onSelect: () => void;
   onDelete: () => void;
+  onInvite?: () => void;
+  isOwner?: boolean;
 }
 
 export const ShoppingListCard: React.FC<ShoppingListCardProps> = ({
   list,
   onSelect,
-  onDelete
+  onDelete,
+  onInvite,
+  isOwner = false
 }) => {
   const completedItems = list.items.filter(item => item.completed).length;
   const totalItems = list.items.length;
@@ -43,17 +47,36 @@ export const ShoppingListCard: React.FC<ShoppingListCardProps> = ({
               {list.description}
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="text-gray-400 hover:text-red-500 p-1"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-1">
+            {isOwner && onInvite && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInvite();
+                }}
+                className="text-gray-400 hover:text-blue-500 p-1"
+                title="Convidar colaboradores"
+              >
+                <UserPlus className="h-4 w-4" />
+              </Button>
+            )}
+            {isOwner && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="text-gray-400 hover:text-red-500 p-1"
+                title="Excluir lista"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3" onClick={onSelect}>
@@ -64,9 +87,12 @@ export const ShoppingListCard: React.FC<ShoppingListCardProps> = ({
                 {completedItems} de {totalItems} itens
               </span>
             </div>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-blue-500 p-1">
-              <Share className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Share className="h-4 w-4 text-gray-400" />
+              <span className="text-xs text-gray-500">
+                {isOwner ? 'Proprietário' : 'Colaborador'}
+              </span>
+            </div>
           </div>
 
           <div className="w-full bg-gray-200 rounded-full h-2">
