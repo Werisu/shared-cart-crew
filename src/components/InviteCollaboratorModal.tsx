@@ -49,15 +49,24 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      console.log('Enviando convite:', {
+        listId,
+        inviter_id: user.id,
+        invitee_email: email.toLowerCase().trim()
+      });
+
+      const { data, error } = await supabase
         .from('list_invitations')
         .insert({
           list_id: listId,
           inviter_id: user.id,
           invitee_email: email.toLowerCase().trim()
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
+        console.error('Erro ao inserir convite:', error);
         if (error.code === '23505') {
           toast({
             title: "Convite já enviado",
@@ -68,6 +77,7 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
           throw error;
         }
       } else {
+        console.log('Convite criado com sucesso:', data);
         toast({
           title: "Convite enviado!",
           description: `Convite enviado para ${email}`

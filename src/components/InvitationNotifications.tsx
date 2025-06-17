@@ -33,6 +33,21 @@ export const InvitationNotifications: React.FC = () => {
     if (!user) return;
 
     try {
+      // Primeiro, buscar o perfil do usuário para obter o email
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+
+      if (!userProfile?.email) {
+        console.log('Email do usuário não encontrado no perfil');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Buscando convites para email:', userProfile.email);
+
       const { data, error } = await supabase
         .from('list_invitations')
         .select(`
@@ -43,10 +58,12 @@ export const InvitationNotifications: React.FC = () => {
           shopping_lists!inner(name, description)
         `)
         .eq('status', 'pending')
-        .or(`invitee_id.eq.${user.id},invitee_email.eq.${user.email}`)
+        .eq('invitee_email', userProfile.email)
         .order('invited_at', { ascending: false });
 
       if (error) throw error;
+
+      console.log('Convites encontrados:', data);
 
       // Fetch inviter profiles separately to avoid foreign key issues
       const invitationsWithProfiles = await Promise.all(
@@ -118,7 +135,16 @@ export const InvitationNotifications: React.FC = () => {
     fetchInvitations();
   }, [user]);
 
-  if (loading || invitations.length === 0) return null;
+  if (loading) {
+    return (
+      <div className="text-center py-4">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-2 text-sm text-gray-600">Verificando convites...</p>
+      </div>
+    );
+  }
+
+  if (invitations.length === 0) return null;
 
   return (
     <Card className="mb-6">
