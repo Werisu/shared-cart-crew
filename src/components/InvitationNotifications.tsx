@@ -16,10 +16,10 @@ interface ReceivedInvitation {
     name: string;
     description: string;
   };
-  profiles: {
+  inviter_profile: {
     name: string;
     email: string;
-  };
+  } | null;
 }
 
 export const InvitationNotifications: React.FC = () => {
@@ -40,15 +40,31 @@ export const InvitationNotifications: React.FC = () => {
           list_id,
           inviter_id,
           invited_at,
-          shopping_lists!inner(name, description),
-          profiles!list_invitations_inviter_id_fkey(name, email)
+          shopping_lists!inner(name, description)
         `)
         .eq('status', 'pending')
         .or(`invitee_id.eq.${user.id},invitee_email.eq.${user.email}`)
         .order('invited_at', { ascending: false });
 
       if (error) throw error;
-      setInvitations(data as ReceivedInvitation[] || []);
+
+      // Fetch inviter profiles separately to avoid foreign key issues
+      const invitationsWithProfiles = await Promise.all(
+        (data || []).map(async (invitation) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('name, email')
+            .eq('id', invitation.inviter_id)
+            .single();
+
+          return {
+            ...invitation,
+            inviter_profile: profile
+          };
+        })
+      );
+
+      setInvitations(invitationsWithProfiles as ReceivedInvitation[]);
     } catch (error) {
       console.error('Erro ao buscar convites recebidos:', error);
     } finally {
@@ -127,7 +143,7 @@ export const InvitationNotifications: React.FC = () => {
                     {invitation.shopping_lists.description}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Convite de {invitation.profiles.name || invitation.profiles.email}
+                    Convite de {invitation.inviter_profile?.name || invitation.inviter_profile?.email || 'Usuário desconhecido'}
                   </p>
                 </div>
               </div>
