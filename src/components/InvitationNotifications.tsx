@@ -93,12 +93,20 @@ export const InvitationNotifications: React.FC = () => {
     setProcessingIds(prev => new Set(prev).add(invitationId));
 
     try {
+      console.log(`Processando convite ${invitationId} - ação: ${action}`);
+      console.log('Usuário atual:', user?.id);
+
       const { data, error } = await supabase.rpc(
         action === 'accept' ? 'accept_invitation' : 'decline_invitation',
         { invitation_id: invitationId }
       );
 
-      if (error) throw error;
+      if (error) {
+        console.error(`Erro ao ${action === 'accept' ? 'aceitar' : 'recusar'} convite:`, error);
+        throw error;
+      }
+
+      console.log(`Resultado da função ${action === 'accept' ? 'accept_invitation' : 'decline_invitation'}:`, data);
 
       if (data) {
         setInvitations(invitations.filter(inv => inv.id !== invitationId));
