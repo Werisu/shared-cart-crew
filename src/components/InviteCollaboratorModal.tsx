@@ -55,6 +55,30 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
         invitee_email: email.toLowerCase().trim()
       });
 
+      // Verificar se o usuário já foi convidado
+      const { data: existingInvite, error: checkError } = await supabase
+        .from('list_invitations')
+        .select('id')
+        .eq('list_id', listId)
+        .eq('invitee_email', email.toLowerCase().trim())
+        .eq('status', 'pending')
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Erro ao verificar convite existente:', checkError);
+        throw checkError;
+      }
+
+      if (existingInvite) {
+        toast({
+          title: "Convite já enviado",
+          description: "Este usuário já foi convidado para esta lista",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('list_invitations')
         .insert({
