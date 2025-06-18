@@ -49,18 +49,56 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
 
     setLoading(true);
     try {
-      console.log('Enviando convite:', {
-        listId,
-        inviter_id: user.id,
-        invitee_email: email.toLowerCase().trim()
-      });
+      console.log('Buscando usuário por email:', email.toLowerCase().trim());
 
-      // Verificar se o usuário já foi convidado
+      // Primeiro, verificar se o usuário existe no sistema
+      const { data: targetUser, error: userError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('email', email.toLowerCase().trim())
+        .single();
+
+      if (userError || !targetUser) {
+        toast({
+          title: "Usuário não encontrado",
+          description: "Este email não está cadastrado no sistema",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      console.log('Usuário encontrado:', targetUser);
+
+      // Verificar se o usuário já é colaborador da lista
+      const { data: existingCollaborator, error: collabError } = await supabase
+        .from('list_collaborators')
+        .select('id')
+        .eq('list_id', listId)
+        .eq('user_id', targetUser.id)
+        .single();
+
+      if (collabError && collabError.code !== 'PGRST116') {
+        console.error('Erro ao verificar colaborador existente:', collabError);
+        throw collabError;
+      }
+
+      if (existingCollaborator) {
+        toast({
+          title: "Usuário já é colaborador",
+          description: "Este usuário já tem acesso a esta lista",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Verificar se já existe um convite pendente
       const { data: existingInvite, error: checkError } = await supabase
         .from('list_invitations')
         .select('id')
         .eq('list_id', listId)
-        .eq('invitee_email', email.toLowerCase().trim())
+        .eq('invitee_id', targetUser.id)
         .eq('status', 'pending')
         .single();
 
@@ -79,36 +117,30 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
         return;
       }
 
+      // Criar o convite
       const { data, error } = await supabase
         .from('list_invitations')
         .insert({
           list_id: listId,
           inviter_id: user.id,
-          invitee_email: email.toLowerCase().trim()
+          invitee_id: targetUser.id,
+          invitee_email: targetUser.email
         })
         .select()
         .single();
 
       if (error) {
         console.error('Erro ao inserir convite:', error);
-        if (error.code === '23505') {
-          toast({
-            title: "Convite já enviado",
-            description: "Este usuário já foi convidado para esta lista",
-            variant: "destructive"
-          });
-        } else {
-          throw error;
-        }
-      } else {
-        console.log('Convite criado com sucesso:', data);
-        toast({
-          title: "Convite enviado!",
-          description: `Convite enviado para ${email}`
-        });
-        setEmail('');
-        onClose();
+        throw error;
       }
+
+      console.log('Convite criado com sucesso:', data);
+      toast({
+        title: "Convite enviado!",
+        description: `Convite enviado para ${targetUser.name || targetUser.email}`
+      });
+      setEmail('');
+      onClose();
     } catch (error) {
       console.error('Erro ao enviar convite:', error);
       toast({
@@ -135,7 +167,7 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
             Convidar Colaborador
           </DialogTitle>
           <DialogDescription>
-            Convide alguém para colaborar na lista "{listName}"
+            Digite o email do usuário que você quer convidar para colaborar na lista "{listName}"
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

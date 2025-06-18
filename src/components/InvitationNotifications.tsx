@@ -33,20 +33,7 @@ export const InvitationNotifications: React.FC = () => {
     if (!user) return;
 
     try {
-      // Primeiro, buscar o perfil do usuário para obter o email
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', user.id)
-        .single();
-
-      if (!userProfile?.email) {
-        console.log('Email do usuário não encontrado no perfil');
-        setLoading(false);
-        return;
-      }
-
-      console.log('Buscando convites para email:', userProfile.email);
+      console.log('Buscando convites para usuário:', user.id);
 
       const { data, error } = await supabase
         .from('list_invitations')
@@ -58,14 +45,14 @@ export const InvitationNotifications: React.FC = () => {
           shopping_lists!inner(name, description)
         `)
         .eq('status', 'pending')
-        .eq('invitee_email', userProfile.email)
+        .eq('invitee_id', user.id)
         .order('invited_at', { ascending: false });
 
       if (error) throw error;
 
       console.log('Convites encontrados:', data);
 
-      // Fetch inviter profiles separately to avoid foreign key issues
+      // Buscar perfis dos convidadores
       const invitationsWithProfiles = await Promise.all(
         (data || []).map(async (invitation) => {
           const { data: profile } = await supabase
@@ -141,6 +128,28 @@ export const InvitationNotifications: React.FC = () => {
 
   useEffect(() => {
     fetchInvitations();
+    
+    // Configurar listener para atualizações em tempo real
+    const channel = supabase
+      .channel('invitation-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'list_invitations',
+          filter: `invitee_id=eq.${user?.id}`
+        },
+        () => {
+          console.log('Novo convite recebido, atualizando lista...');
+          fetchInvitations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   if (loading) {

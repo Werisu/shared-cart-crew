@@ -9,9 +9,14 @@ import { Clock, Mail, X } from 'lucide-react';
 
 interface Invitation {
   id: string;
+  invitee_id: string;
   invitee_email: string;
   invited_at: string;
   status: string;
+  invitee_profile: {
+    name: string;
+    email: string;
+  } | null;
 }
 
 interface PendingInvitationsProps {
@@ -35,7 +40,7 @@ export const PendingInvitations: React.FC<PendingInvitationsProps> = ({
       console.log('Buscando convites pendentes para lista:', listId);
       const { data, error } = await supabase
         .from('list_invitations')
-        .select('id, invitee_email, invited_at, status')
+        .select('id, invitee_id, invitee_email, invited_at, status')
         .eq('list_id', listId)
         .eq('status', 'pending')
         .order('invited_at', { ascending: false });
@@ -46,7 +51,30 @@ export const PendingInvitations: React.FC<PendingInvitationsProps> = ({
       }
       
       console.log('Convites pendentes encontrados:', data);
-      setInvitations(data || []);
+
+      // Buscar informações dos usuários convidados
+      const invitationsWithProfiles = await Promise.all(
+        (data || []).map(async (invitation) => {
+          if (invitation.invitee_id) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('name, email')
+              .eq('id', invitation.invitee_id)
+              .single();
+
+            return {
+              ...invitation,
+              invitee_profile: profile
+            };
+          }
+          return {
+            ...invitation,
+            invitee_profile: null
+          };
+        })
+      );
+
+      setInvitations(invitationsWithProfiles as Invitation[]);
     } catch (error) {
       console.error('Erro ao buscar convites:', error);
     } finally {
@@ -57,35 +85,6 @@ export const PendingInvitations: React.FC<PendingInvitationsProps> = ({
   const cancelInvitation = async (invitationId: string) => {
     try {
       console.log('Tentando cancelar convite:', invitationId);
-      console.log('Usuário atual:', user?.id);
-      
-      // Primeiro, vamos verificar se o convite existe e se o usuário tem permissão
-      const { data: inviteCheck, error: checkError } = await supabase
-        .from('list_invitations')
-        .select('id, inviter_id, list_id')
-        .eq('id', invitationId)
-        .single();
-      
-      if (checkError) {
-        console.error('Erro ao verificar convite:', checkError);
-        throw checkError;
-      }
-      
-      console.log('Convite encontrado:', inviteCheck);
-      
-      // Verificar se o usuário é o dono da lista
-      const { data: listCheck, error: listError } = await supabase
-        .from('shopping_lists')
-        .select('id, created_by')
-        .eq('id', inviteCheck.list_id)
-        .single();
-      
-      if (listError) {
-        console.error('Erro ao verificar lista:', listError);
-      } else {
-        console.log('Lista encontrada:', listCheck);
-        console.log('Usuário é dono da lista?', listCheck.created_by === user?.id);
-      }
 
       const { error } = await supabase
         .from('list_invitations')
@@ -140,7 +139,9 @@ export const PendingInvitations: React.FC<PendingInvitationsProps> = ({
               <div className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-gray-500" />
                 <div>
-                  <p className="font-medium">{invitation.invitee_email}</p>
+                  <p className="font-medium">
+                    {invitation.invitee_profile?.name || invitation.invitee_profile?.email || invitation.invitee_email}
+                  </p>
                   <p className="text-sm text-gray-500">
                     Enviado em {new Date(invitation.invited_at).toLocaleDateString('pt-BR')}
                   </p>
