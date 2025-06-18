@@ -4,7 +4,7 @@ import { ShoppingListCard } from './ShoppingListCard';
 import { CreateListModal } from './CreateListModal';
 import { ListDetail } from './ListDetail';
 import { InviteCollaboratorModal } from './InviteCollaboratorModal';
-import { InvitationNotifications } from './InvitationNotifications';
+import { ReceivedInvitations } from './ReceivedInvitations';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -195,7 +195,8 @@ export const ShoppingListManager = () => {
 
   return (
     <div className="space-y-6">
-      <InvitationNotifications />
+      {/* Seção de convites recebidos */}
+      <ReceivedInvitations />
       
       <div className="flex justify-between items-center">
         <div>
