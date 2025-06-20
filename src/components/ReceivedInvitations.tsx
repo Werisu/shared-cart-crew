@@ -35,30 +35,39 @@ export const ReceivedInvitations: React.FC = () => {
     try {
       console.log('Buscando convites recebidos para usuário:', user.id);
 
-      const { data, error } = await supabase
+      // Primeiro, buscar os convites básicos
+      const { data: invitationsData, error: invitationsError } = await supabase
         .from('list_invitations')
-        .select(`
-          id,
-          list_id,
-          inviter_id,
-          invited_at,
-          shopping_lists!inner(name, description)
-        `)
+        .select('*')
         .eq('status', 'pending')
         .eq('invitee_id', user.id)
         .order('invited_at', { ascending: false });
 
-      if (error) {
-        console.error('Erro ao buscar convites:', error);
-        throw error;
+      if (invitationsError) {
+        console.error('Erro ao buscar convites:', invitationsError);
+        throw invitationsError;
       }
 
-      console.log('Convites recebidos encontrados:', data);
+      console.log('Convites básicos encontrados:', invitationsData);
 
-      // Buscar perfis dos convidadores
-      const invitationsWithProfiles = await Promise.all(
-        (data || []).map(async (invitation) => {
-          const { data: profile } = await supabase
+      if (!invitationsData || invitationsData.length === 0) {
+        console.log('Nenhum convite encontrado para o usuário');
+        setInvitations([]);
+        return;
+      }
+
+      // Buscar informações das listas e perfis dos convidadores
+      const invitationsWithDetails = await Promise.all(
+        invitationsData.map(async (invitation) => {
+          // Buscar informações da lista
+          const { data: listData } = await supabase
+            .from('shopping_lists')
+            .select('name, description')
+            .eq('id', invitation.list_id)
+            .single();
+
+          // Buscar perfil do convidador
+          const { data: inviterProfile } = await supabase
             .from('profiles')
             .select('name, email')
             .eq('id', invitation.inviter_id)
@@ -66,14 +75,21 @@ export const ReceivedInvitations: React.FC = () => {
 
           return {
             ...invitation,
-            inviter_profile: profile
+            shopping_lists: listData || { name: 'Lista não encontrada', description: '' },
+            inviter_profile: inviterProfile
           };
         })
       );
 
-      setInvitations(invitationsWithProfiles as ReceivedInvitation[]);
+      console.log('Convites com detalhes:', invitationsWithDetails);
+      setInvitations(invitationsWithDetails as ReceivedInvitation[]);
     } catch (error) {
       console.error('Erro ao buscar convites recebidos:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os convites",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
